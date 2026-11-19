@@ -1,42 +1,417 @@
-const customerNames = ["Apex Automotive Systems", "Bharat Precision Works", "Nexa Motion Technologies", "Orion Defence Systems", "Pinnacle Components", "Vertex Engineering Co.", "Meridian Aerospace", "Atlas Hydraulics", "Summit Mobility", "Prime Industrial Labs", "Kinetic Auto Parts", "Nova Packaging Systems", "Trident Heavy Engineering", "Helix Medical Devices", "Crestline AgriTech"];
-const supplierNames = ["Precision Steel House", "MechDrive Components", "Apex Bearings India", "Omni Controls & Drives", "Suryatech Metals", "Pune Industrial Supply", "Kraft Tooling Co.", "Vector Motion Systems", "Indus Electricals", "Reliable Fasteners"];
-const productNames = ["GCV-850 Vertical Machining Centre", "GCL-250 CNC Turning Centre", "GSP-400 Twin Station SPM", "GVM-1160 VMC", "GFA-6 Axis Automation Cell", "Hydraulic Fixture Assembly", "Precision Spindle Unit", "ATC Tool Magazine", "Pallet Changer System", "CNC Control Cabinet", "Coolant Filtration Unit", "Rotary Indexing Table", "Servo Press Station", "Custom Transfer Line"];
-const projectNames = ["Twin-station housing line", "EV gearbox machining cell", "Aerospace fixture package", "High-speed valve body line", "Automated shaft production", "CNC retrofit — Line 04", "Medical implant finishing cell"];
-const employeeNames = ["Aarav Kulkarni", "Priya Deshmukh", "Rohan Patil", "Ananya Shah", "Kunal Joshi", "Meera Nair", "Siddharth Rao", "Isha Mehta", "Vikram Pawar", "Neha Bhosale", "Arjun More", "Kavita Jadhav", "Dev Malhotra", "Sneha Iyer", "Aditya Gokhale", "Nisha Kapoor", "Omkar Shinde", "Riya Sane", "Saurabh Kulkarni", "Tanvi Kulkarni"];
-const leadNames = ["EV powertrain machining cell", "Custom SPM — brake carrier", "VMC upgrade enquiry", "Precision spindle retrofit", "Automated inspection station", "CNC lathe line expansion", "Robot tending integration", "Pallet system quotation"];
+const customerNames = [
+  "Apex Automotive Systems",
+  "Bharat Precision Works",
+  "Nexa Motion Technologies",
+  "Orion Defence Systems",
+  "Pinnacle Components",
+  "Vertex Engineering Co.",
+  "Meridian Aerospace",
+  "Atlas Hydraulics",
+  "Summit Mobility",
+  "Prime Industrial Labs",
+  "Kinetic Auto Parts",
+  "Nova Packaging Systems",
+  "Trident Heavy Engineering",
+  "Helix Medical Devices",
+  "Crestline AgriTech",
+];
+const supplierNames = [
+  "Precision Steel House",
+  "MechDrive Components",
+  "Apex Bearings India",
+  "Omni Controls & Drives",
+  "Suryatech Metals",
+  "Pune Industrial Supply",
+  "Kraft Tooling Co.",
+  "Vector Motion Systems",
+  "Indus Electricals",
+  "Reliable Fasteners",
+];
+const productNames = [
+  "GCV-850 Vertical Machining Centre",
+  "GCL-250 CNC Turning Centre",
+  "GSP-400 Twin Station SPM",
+  "GVM-1160 VMC",
+  "GFA-6 Axis Automation Cell",
+  "Hydraulic Fixture Assembly",
+  "Precision Spindle Unit",
+  "ATC Tool Magazine",
+  "Pallet Changer System",
+  "CNC Control Cabinet",
+  "Coolant Filtration Unit",
+  "Rotary Indexing Table",
+  "Servo Press Station",
+  "Custom Transfer Line",
+];
+const projectNames = [
+  "Twin-station housing line",
+  "EV gearbox machining cell",
+  "Aerospace fixture package",
+  "High-speed valve body line",
+  "Automated shaft production",
+  "CNC retrofit — Line 04",
+  "Medical implant finishing cell",
+];
+const employeeNames = [
+  "Aarav Kulkarni",
+  "Priya Deshmukh",
+  "Rohan Patil",
+  "Ananya Shah",
+  "Kunal Joshi",
+  "Meera Nair",
+  "Siddharth Rao",
+  "Isha Mehta",
+  "Vikram Pawar",
+  "Neha Bhosale",
+  "Arjun More",
+  "Kavita Jadhav",
+  "Dev Malhotra",
+  "Sneha Iyer",
+  "Aditya Gokhale",
+  "Nisha Kapoor",
+  "Omkar Shinde",
+  "Riya Sane",
+  "Saurabh Kulkarni",
+  "Tanvi Kulkarni",
+];
+const leadNames = [
+  "EV powertrain machining cell",
+  "Custom SPM — brake carrier",
+  "VMC upgrade enquiry",
+  "Precision spindle retrofit",
+  "Automated inspection station",
+  "CNC lathe line expansion",
+  "Robot tending integration",
+  "Pallet system quotation",
+];
 const statuses = ["In progress", "Approved", "Pending", "Completed", "On hold"];
 const today = new Date("2026-11-19T12:00:00Z");
 const date = (days) => new Date(today.getTime() - days * 86400000).toISOString().slice(0, 10);
 const money = (value) => Math.round(value / 100) * 100;
-const row = (id, name, category, status, amount, days, owner, refPrefix) => ({ id, name, category, status, amount: money(amount), date: date(days), owner, reference: `${refPrefix}-${String(id).padStart(4, "0")}` });
-const makeRows = (count, names, category, prefix, min, spread, ownerNames = employeeNames) => Array.from({ length: count }, (_, index) => {
-  const id = index + 1;
-  const owner = ownerNames[index % ownerNames.length];
-  return row(id, `${names[index % names.length]}${index >= names.length ? ` · ${String(Math.floor(index / names.length) + 1).padStart(2, "0")}` : ""}`, category[index % category.length], statuses[index % statuses.length], min + ((index * 7919) % spread), (index * 3) % 89, owner, prefix);
+const row = (id, name, category, status, amount, days, owner, refPrefix) => ({
+  id,
+  name,
+  category,
+  status,
+  amount: money(amount),
+  date: date(days),
+  owner,
+  reference: `${refPrefix}-${String(id).padStart(4, "0")}`,
 });
-const sales = makeRows(100, ["EV gearbox housing", "GCV-850 VMC", "Twin-spindle SPM", "CNC retrofit package", "Robot tending cell", "Precision fixture set", "GCL-250 turning centre"], ["Machine", "SPM", "Automation", "Parts"], "SO", 285000, 4150000, customerNames);
-const purchases = makeRows(80, ["Alloy steel stock", "Servo drive assembly", "Linear guide set", "Spindle bearing kit", "Electrical enclosure", "Hydraulic power pack", "Tool holder batch"], ["Raw material", "Electrical", "Components"], "PO", 12000, 790000, supplierNames);
-const expenses = makeRows(50, ["Factory utilities", "Machine commissioning travel", "Tooling and consumables", "Freight and logistics", "Staff training", "Workshop maintenance"], ["Operations", "Travel", "Maintenance", "Logistics"], "EXP", 3200, 127000, employeeNames);
-const customers = makeRows(50, customerNames, ["Automotive", "Aerospace", "Heavy engineering", "Medical", "Packaging"], "CUS", 120000, 9000000, customerNames).map((item, index) => ({ ...item, email: `procurement${index + 1}@${["apexauto", "bharatprecision", "nexamotion", "oriondefence", "vertexeng"][index % 5]}.co.in`, phone: `+91 98${String(32411762 + index).slice(0, 8)}`, city: ["Pune", "Chennai", "Bengaluru", "Nashik", "Aurangabad"][index % 5], gst: `27AABCG${String(2100 + index)}L1Z${index % 9}` }));
-const suppliers = makeRows(40, supplierNames, ["Metals", "Components", "Electrical", "Tooling"], "SUP", 25000, 1750000, supplierNames).map((item, index) => ({ ...item, email: `sales${index + 1}@${["precisionsteel", "mechdrive", "apexbearings", "omnicontrols"][index % 4]}.co.in`, phone: `+91 98${String(77861024 + index).slice(0, 8)}`, city: ["Pune", "Mumbai", "Nashik", "Kolhapur"][index % 4], gst: `27AACCM${String(8310 + index)}K1Z${index % 9}` }));
-const products = makeRows(100, productNames, ["SPM", "CNC", "VMC", "Automation", "Components"], "SKU", 8500, 7200000).map((item, index) => ({ ...item, sku: `GC-${String(2026 + index).slice(-2)}-${String(index + 1).padStart(4, "0")}`, stock: Math.max(0, 48 - index * 2 + (index % 7) * 3), minStock: 8 + index % 9 }));
-const employees = makeRows(20, employeeNames, ["Engineering", "Production", "Service", "Sales", "Finance", "Quality"], "EMP", 22000, 71000, employeeNames).map((item, index) => ({ ...item, designation: ["Design Engineer", "CNC Programmer", "Service Engineer", "Production Lead", "Sales Manager"][index % 5], email: `${item.owner.toLowerCase().replaceAll(" ", ".")}@globalcnc.in` }));
-const leads = makeRows(30, leadNames, ["Website", "Referral", "Trade show", "Direct"], "LD", 160000, 5800000, customerNames).map((item, index) => ({ ...item, contact: customerNames[index % customerNames.length], probability: [25, 40, 65, 80, 15][index % 5], followUp: date(index % 10) }));
-const projects = makeRows(25, projectNames, ["SPM", "Automation", "Retrofit", "VMC"], "PRJ", 950000, 15500000).map((item, index) => ({ ...item, progress: [18, 42, 68, 86, 100][index % 5], due: date(-((index % 70) + 20)) }));
-const machines = makeRows(30, productNames.slice(0, 8), ["Production", "Commissioning", "Service"], "MCH", 1850000, 5900000, customerNames).map((item, index) => ({ ...item, serial: `GC-${2021 + index % 6}-${String(index + 41).padStart(5, "0")}`, nextService: date(-((index % 60) + 5)) }));
-const inquiries = makeRows(28, leadNames, ["Machine enquiry", "Quote request", "Callback", "Website"], "INQ", 220000, 4500000, customerNames);
-const inventory = makeRows(60, ["EN8 steel bar Ø60", "Servo motor 2.2kW", "LM guide 35mm", "M8 socket bolt", "Hydraulic seal kit", "Proximity sensor", "Carbide insert pack"], ["Raw material", "Finished goods", "Machine parts"], "INV", 2500, 290000, supplierNames).map((item, index) => ({ ...item, stock: 130 - (index * 7) % 120, warehouse: ["Bhosari · A1", "Bhosari · B3", "Pune · Finished"][index % 3] }));
-const services = makeRows(35, ["Spindle vibration — VMC-07", "Annual maintenance visit", "Coolant system inspection", "CNC parameter backup", "Axis alignment — Line 02", "Machine installation", "Control retrofit"], ["AMC", "Repair", "Maintenance", "Installation"], "SRV", 4500, 185000, employeeNames).map((item, index) => ({ ...item, machine: `GC-${2024 + index % 3}-${String(index + 12).padStart(4, "0")}` }));
-const vendors = makeRows(40, supplierNames, ["Approved", "Review", "Preferred"], "VEN", 25000, 950000, supplierNames);
-const accounting = makeRows(36, ["Customer receipt", "Supplier payment", "Payroll disbursement", "Machine order advance", "GST payment", "Workshop overhead", "Service invoice"], ["Income", "Expense", "Purchase", "Sales", "Receipts", "Payments"], "ACC", 18000, 1650000);
-const reports = makeRows(18, ["Monthly sales", "Inventory valuation", "Open purchase orders", "Service response", "Lead conversion", "GST summary", "Customer outstanding"], ["Sales", "Inventory", "Service", "Finance"], "RPT", 0, 1000);
-const settings = ["Company profile", "Business information", "Users & roles", "Permissions", "Theme & appearance", "Backup placeholder"].map((name, index) => row(index + 1, name, "Configuration", "Active", 0, 0, "Admin", "SET"));
+const makeRows = (count, names, category, prefix, min, spread, ownerNames = employeeNames) =>
+  Array.from({ length: count }, (_, index) => {
+    const id = index + 1;
+    const owner = ownerNames[index % ownerNames.length];
+    return row(
+      id,
+      `${names[index % names.length]}${index >= names.length ? ` · ${String(Math.floor(index / names.length) + 1).padStart(2, "0")}` : ""}`,
+      category[index % category.length],
+      statuses[index % statuses.length],
+      min + ((index * 7919) % spread),
+      (index * 3) % 89,
+      owner,
+      prefix,
+    );
+  });
+const sales = makeRows(
+  100,
+  [
+    "EV gearbox housing",
+    "GCV-850 VMC",
+    "Twin-spindle SPM",
+    "CNC retrofit package",
+    "Robot tending cell",
+    "Precision fixture set",
+    "GCL-250 turning centre",
+  ],
+  ["Machine", "SPM", "Automation", "Parts"],
+  "SO",
+  285000,
+  4150000,
+  customerNames,
+);
+const purchases = makeRows(
+  80,
+  [
+    "Alloy steel stock",
+    "Servo drive assembly",
+    "Linear guide set",
+    "Spindle bearing kit",
+    "Electrical enclosure",
+    "Hydraulic power pack",
+    "Tool holder batch",
+  ],
+  ["Raw material", "Electrical", "Components"],
+  "PO",
+  12000,
+  790000,
+  supplierNames,
+);
+const expenses = makeRows(
+  50,
+  [
+    "Factory utilities",
+    "Machine commissioning travel",
+    "Tooling and consumables",
+    "Freight and logistics",
+    "Staff training",
+    "Workshop maintenance",
+  ],
+  ["Operations", "Travel", "Maintenance", "Logistics"],
+  "EXP",
+  3200,
+  127000,
+  employeeNames,
+);
+const customers = makeRows(
+  50,
+  customerNames,
+  ["Automotive", "Aerospace", "Heavy engineering", "Medical", "Packaging"],
+  "CUS",
+  120000,
+  9000000,
+  customerNames,
+).map((item, index) => ({
+  ...item,
+  email: `procurement${index + 1}@${["apexauto", "bharatprecision", "nexamotion", "oriondefence", "vertexeng"][index % 5]}.co.in`,
+  phone: `+91 98${String(32411762 + index).slice(0, 8)}`,
+  city: ["Pune", "Chennai", "Bengaluru", "Nashik", "Aurangabad"][index % 5],
+  gst: `27AABCG${String(2100 + index)}L1Z${index % 9}`,
+}));
+const suppliers = makeRows(
+  40,
+  supplierNames,
+  ["Metals", "Components", "Electrical", "Tooling"],
+  "SUP",
+  25000,
+  1750000,
+  supplierNames,
+).map((item, index) => ({
+  ...item,
+  email: `sales${index + 1}@${["precisionsteel", "mechdrive", "apexbearings", "omnicontrols"][index % 4]}.co.in`,
+  phone: `+91 98${String(77861024 + index).slice(0, 8)}`,
+  city: ["Pune", "Mumbai", "Nashik", "Kolhapur"][index % 4],
+  gst: `27AACCM${String(8310 + index)}K1Z${index % 9}`,
+}));
+const products = makeRows(
+  100,
+  productNames,
+  ["SPM", "CNC", "VMC", "Automation", "Components"],
+  "SKU",
+  8500,
+  7200000,
+).map((item, index) => ({
+  ...item,
+  sku: `GC-${String(2026 + index).slice(-2)}-${String(index + 1).padStart(4, "0")}`,
+  stock: Math.max(0, 48 - index * 2 + (index % 7) * 3),
+  minStock: 8 + (index % 9),
+}));
+const employees = makeRows(
+  20,
+  employeeNames,
+  ["Engineering", "Production", "Service", "Sales", "Finance", "Quality"],
+  "EMP",
+  22000,
+  71000,
+  employeeNames,
+).map((item, index) => ({
+  ...item,
+  designation: [
+    "Design Engineer",
+    "CNC Programmer",
+    "Service Engineer",
+    "Production Lead",
+    "Sales Manager",
+  ][index % 5],
+  email: `${item.owner.toLowerCase().replaceAll(" ", ".")}@globalcnc.in`,
+}));
+const leads = makeRows(
+  30,
+  leadNames,
+  ["Website", "Referral", "Trade show", "Direct"],
+  "LD",
+  160000,
+  5800000,
+  customerNames,
+).map((item, index) => ({
+  ...item,
+  contact: customerNames[index % customerNames.length],
+  probability: [25, 40, 65, 80, 15][index % 5],
+  followUp: date(index % 10),
+}));
+const projects = makeRows(
+  25,
+  projectNames,
+  ["SPM", "Automation", "Retrofit", "VMC"],
+  "PRJ",
+  950000,
+  15500000,
+).map((item, index) => ({
+  ...item,
+  progress: [18, 42, 68, 86, 100][index % 5],
+  due: date(-((index % 70) + 20)),
+}));
+const machines = makeRows(
+  30,
+  productNames.slice(0, 8),
+  ["Production", "Commissioning", "Service"],
+  "MCH",
+  1850000,
+  5900000,
+  customerNames,
+).map((item, index) => ({
+  ...item,
+  serial: `GC-${2021 + (index % 6)}-${String(index + 41).padStart(5, "0")}`,
+  nextService: date(-((index % 60) + 5)),
+}));
+const inquiries = makeRows(
+  28,
+  leadNames,
+  ["Machine enquiry", "Quote request", "Callback", "Website"],
+  "INQ",
+  220000,
+  4500000,
+  customerNames,
+);
+const inventory = makeRows(
+  60,
+  [
+    "EN8 steel bar Ø60",
+    "Servo motor 2.2kW",
+    "LM guide 35mm",
+    "M8 socket bolt",
+    "Hydraulic seal kit",
+    "Proximity sensor",
+    "Carbide insert pack",
+  ],
+  ["Raw material", "Finished goods", "Machine parts"],
+  "INV",
+  2500,
+  290000,
+  supplierNames,
+).map((item, index) => ({
+  ...item,
+  stock: 130 - ((index * 7) % 120),
+  warehouse: ["Bhosari · A1", "Bhosari · B3", "Pune · Finished"][index % 3],
+}));
+const services = makeRows(
+  35,
+  [
+    "Spindle vibration — VMC-07",
+    "Annual maintenance visit",
+    "Coolant system inspection",
+    "CNC parameter backup",
+    "Axis alignment — Line 02",
+    "Machine installation",
+    "Control retrofit",
+  ],
+  ["AMC", "Repair", "Maintenance", "Installation"],
+  "SRV",
+  4500,
+  185000,
+  employeeNames,
+).map((item, index) => ({
+  ...item,
+  machine: `GC-${2024 + (index % 3)}-${String(index + 12).padStart(4, "0")}`,
+}));
+const vendors = makeRows(
+  40,
+  supplierNames,
+  ["Approved", "Review", "Preferred"],
+  "VEN",
+  25000,
+  950000,
+  supplierNames,
+);
+const accounting = makeRows(
+  36,
+  [
+    "Customer receipt",
+    "Supplier payment",
+    "Payroll disbursement",
+    "Machine order advance",
+    "GST payment",
+    "Workshop overhead",
+    "Service invoice",
+  ],
+  ["Income", "Expense", "Purchase", "Sales", "Receipts", "Payments"],
+  "ACC",
+  18000,
+  1650000,
+);
+const reports = makeRows(
+  18,
+  [
+    "Monthly sales",
+    "Inventory valuation",
+    "Open purchase orders",
+    "Service response",
+    "Lead conversion",
+    "GST summary",
+    "Customer outstanding",
+  ],
+  ["Sales", "Inventory", "Service", "Finance"],
+  "RPT",
+  0,
+  1000,
+);
+const settings = [
+  "Company profile",
+  "Business information",
+  "Users & roles",
+  "Permissions",
+  "Theme & appearance",
+  "Backup placeholder",
+].map((name, index) => row(index + 1, name, "Configuration", "Active", 0, 0, "Admin", "SET"));
 const activities = [
-  { initials: "AP", text: "New SPM enquiry received from Apex Automotive", time: "12 min ago", tone: "orange" },
-  { initials: "PO", text: "Purchase order PO-0084 approved by Priya Deshmukh", time: "38 min ago", tone: "blue" },
-  { initials: "SR", text: "Service visit completed for GCV-850 · Pune plant", time: "1 hr ago", tone: "green" },
-  { initials: "IN", text: "Inventory alert — EN8 steel bar below minimum", time: "2 hrs ago", tone: "red" },
-  { initials: "PR", text: "EV gearbox cell moved to final assembly", time: "3 hrs ago", tone: "blue" },
+  {
+    initials: "AP",
+    text: "New SPM enquiry received from Apex Automotive",
+    time: "12 min ago",
+    tone: "orange",
+  },
+  {
+    initials: "PO",
+    text: "Purchase order PO-0084 approved by Priya Deshmukh",
+    time: "38 min ago",
+    tone: "blue",
+  },
+  {
+    initials: "SR",
+    text: "Service visit completed for GCV-850 · Pune plant",
+    time: "1 hr ago",
+    tone: "green",
+  },
+  {
+    initials: "IN",
+    text: "Inventory alert — EN8 steel bar below minimum",
+    time: "2 hrs ago",
+    tone: "red",
+  },
+  {
+    initials: "PR",
+    text: "EV gearbox cell moved to final assembly",
+    time: "3 hrs ago",
+    tone: "blue",
+  },
 ];
-export const datasets = { sales, purchases, expenses, customers, suppliers, products, employees, leads, projects, machines, inquiries, inventory, services, vendors, accounting, reports, settings };
+export const datasets = {
+  sales,
+  purchases,
+  expenses,
+  customers,
+  suppliers,
+  products,
+  employees,
+  leads,
+  projects,
+  machines,
+  inquiries,
+  inventory,
+  services,
+  vendors,
+  accounting,
+  reports,
+  settings,
+};
 export const activitiesData = activities;

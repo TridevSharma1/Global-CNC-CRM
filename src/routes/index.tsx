@@ -15,7 +15,8 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "Global CNC Pvt. Ltd. | Precision, engineered" },
       {
         property: "og:description",
-        content: "Purpose-built machines and intelligent automation for India's manufacturing industry.",
+        content:
+          "Purpose-built machines and intelligent automation for India's manufacturing industry.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
