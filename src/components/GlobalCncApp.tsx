@@ -197,6 +197,8 @@ export function GlobalCncApp() {
             />
             <ServicesSection onOpenInquiry={handleOpenInquiry} />
             <IndustriesSection onOpenInquiry={handleOpenInquiry} />
+            <ProjectsSection onOpenInquiry={handleOpenInquiry} />
+            <GallerySection />
             <TestimonialsSection />
             <CertificatesSection />
             <ContactSection />
