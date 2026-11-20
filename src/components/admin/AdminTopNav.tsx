@@ -33,23 +33,16 @@ export const AdminTopNav: React.FC<AdminTopNavProps> = ({
 
   const tabLabels: Record<AdminTab, string> = {
     dashboard: "Enterprise Operations Dashboard",
-    sales: "Sales & Invoicing Management",
+    sales: "Sale & Invoicing Management",
     purchase: "Purchase Orders & Procurement",
     expense: "Operating Expense & Vouchers",
-    customers: "Customer Accounts & Master Data",
-    suppliers: "Supplier & Sourcing Directory",
-    products: "Machine Products & SKU Catalog",
-    inventory: "Stores & Warehouse Stock Control",
-    employees: "Human Resources & Attendance",
-    leads: "Sales Leads & CRM Pipeline",
-    inquiries: "Website RFQs & Inquiries",
-    projects: "Client Turnkey Projects",
-    machines: "Deployed Fleet & Field Assets",
-    services: "Service Tickets & Preventive AMC",
-    vendors: "Vendor Performance & Settlement",
-    accounting: "Financial Accounting & Cash Flow",
-    reports: "Intelligence & Audit Reports",
-    settings: "Corporate Profile & System Settings",
+    "profit-revenue": "Profit & Revenue Statement",
+    "sales-report": "Sales & Commercial Report",
+    "purchase-report": "Purchase Spend Report",
+    "expense-report": "Expense & Overhead Report",
+    customers: "Customer Directory",
+    suppliers: "Supplier Directory",
+    settings: "Company Profile & System Settings",
   };
 
   return (

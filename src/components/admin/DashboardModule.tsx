@@ -131,7 +131,7 @@ export const DashboardModule: React.FC<DashboardModuleProps> = ({
             icon="wallet"
             subtitle="100 Invoiced contracts"
             accentColor="orange"
-            onClick={() => onNavigateTab("accounting")}
+            onClick={() => onNavigateTab("profit-revenue")}
           />
           <StatCard
             title="Net Profit (YTD)"
@@ -140,7 +140,7 @@ export const DashboardModule: React.FC<DashboardModuleProps> = ({
             icon="chart"
             subtitle="Net operational profit"
             accentColor="green"
-            onClick={() => onNavigateTab("reports")}
+            onClick={() => onNavigateTab("profit-revenue")}
           />
           <StatCard
             title="Pending Orders"
@@ -180,22 +180,22 @@ export const DashboardModule: React.FC<DashboardModuleProps> = ({
             onClick={() => onNavigateTab("suppliers")}
           />
           <StatCard
-            title="Inventory Value"
-            value={formatLakhsCr(inventoryValuation)}
-            change="60 SKU categories"
-            icon="inventory"
-            subtitle="Bhosari A1 & B3 stores"
+            title="Sales Report"
+            value="100 Orders"
+            change="View Invoices"
+            icon="sales"
+            subtitle="Commercial realize audit"
             accentColor="blue"
-            onClick={() => onNavigateTab("inventory")}
+            onClick={() => onNavigateTab("sales-report")}
           />
           <StatCard
-            title="Machine Fleet"
-            value="30 Units"
-            change="98% Uptime"
-            icon="machine"
-            subtitle="Active under warranty/AMC"
+            title="Purchase Report"
+            value="80 POs"
+            change="View Spends"
+            icon="cart"
+            subtitle="Sourcing & vendor spend"
             accentColor="green"
-            onClick={() => onNavigateTab("machines")}
+            onClick={() => onNavigateTab("purchase-report")}
           />
         </div>
       </div>

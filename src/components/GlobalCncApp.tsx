@@ -25,17 +25,10 @@ import { ExpenseModule } from "./admin/ExpenseModule";
 import { SalesModule } from "./admin/SalesModule";
 import { CustomerModule } from "./admin/CustomerModule";
 import { SupplierModule } from "./admin/SupplierModule";
-import { ProductModule } from "./admin/ProductModule";
-import { InventoryModule } from "./admin/InventoryModule";
-import { EmployeeModule } from "./admin/EmployeeModule";
-import { LeadModule } from "./admin/LeadModule";
-import { InquiryModule } from "./admin/InquiryModule";
-import { ProjectModule } from "./admin/ProjectModule";
-import { MachineModule } from "./admin/MachineModule";
-import { ServiceModule } from "./admin/ServiceModule";
-import { VendorModule } from "./admin/VendorModule";
-import { AccountingModule } from "./admin/AccountingModule";
-import { ReportsModule } from "./admin/ReportsModule";
+import { SalesReportModule } from "./admin/SalesReportModule";
+import { PurchaseReportModule } from "./admin/PurchaseReportModule";
+import { ExpenseReportModule } from "./admin/ExpenseReportModule";
+import { ProfitRevenueModule } from "./admin/ProfitRevenueModule";
 import { SettingsModule } from "./admin/SettingsModule";
 import { LoginModal } from "./admin/LoginModal";
 
@@ -147,19 +140,12 @@ export function GlobalCncApp() {
             {activeAdminTab === "sales" && <SalesModule />}
             {activeAdminTab === "purchase" && <PurchaseModule />}
             {activeAdminTab === "expense" && <ExpenseModule />}
+            {activeAdminTab === "profit-revenue" && <ProfitRevenueModule />}
+            {activeAdminTab === "sales-report" && <SalesReportModule />}
+            {activeAdminTab === "purchase-report" && <PurchaseReportModule />}
+            {activeAdminTab === "expense-report" && <ExpenseReportModule />}
             {activeAdminTab === "customers" && <CustomerModule />}
             {activeAdminTab === "suppliers" && <SupplierModule />}
-            {activeAdminTab === "products" && <ProductModule />}
-            {activeAdminTab === "inventory" && <InventoryModule />}
-            {activeAdminTab === "employees" && <EmployeeModule />}
-            {activeAdminTab === "leads" && <LeadModule />}
-            {activeAdminTab === "inquiries" && <InquiryModule />}
-            {activeAdminTab === "projects" && <ProjectModule />}
-            {activeAdminTab === "machines" && <MachineModule />}
-            {activeAdminTab === "services" && <ServiceModule />}
-            {activeAdminTab === "vendors" && <VendorModule />}
-            {activeAdminTab === "accounting" && <AccountingModule />}
-            {activeAdminTab === "reports" && <ReportsModule />}
             {activeAdminTab === "settings" && <SettingsModule />}
           </main>
         </div>

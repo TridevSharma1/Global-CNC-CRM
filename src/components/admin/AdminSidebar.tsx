@@ -7,19 +7,12 @@ export type AdminTab =
   | "sales"
   | "purchase"
   | "expense"
+  | "profit-revenue"
+  | "sales-report"
+  | "purchase-report"
+  | "expense-report"
   | "customers"
   | "suppliers"
-  | "products"
-  | "inventory"
-  | "employees"
-  | "leads"
-  | "inquiries"
-  | "projects"
-  | "machines"
-  | "services"
-  | "vendors"
-  | "accounting"
-  | "reports"
   | "settings";
 
 interface AdminSidebarProps {
@@ -45,48 +38,31 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   }[] = [
     {
       heading: "Overview",
-      items: [{ id: "dashboard", label: "Dashboard & KPIs", icon: "dashboard" }],
+      items: [{ id: "dashboard", label: "Dashboard", icon: "dashboard" }],
     },
     {
-      heading: "Commerce & CRM",
+      heading: "Core Operations",
       items: [
-        { id: "sales", label: "Sales & Invoices", icon: "sales" },
-        { id: "customers", label: "Customer Directory", icon: "customer" },
-        { id: "leads", label: "Leads & Pipeline", icon: "lead" },
-        { id: "inquiries", label: "Website RFQs", icon: "inquiry", badge: "New" },
+        { id: "sales", label: "Sale", icon: "sales", badge: "100" },
+        { id: "purchase", label: "Purchase", icon: "purchase", badge: "80" },
+        { id: "expense", label: "Expense", icon: "expense", badge: "50" },
       ],
     },
     {
-      heading: "Procurement & Supply",
+      heading: "Reports & Financials",
       items: [
-        { id: "purchase", label: "Purchase Orders", icon: "purchase" },
-        { id: "suppliers", label: "Suppliers List", icon: "supplier" },
-        { id: "vendors", label: "Vendor Management", icon: "vendor" },
+        { id: "profit-revenue", label: "Profit Revenue", icon: "trend" },
+        { id: "sales-report", label: "Sales Report", icon: "report" },
+        { id: "purchase-report", label: "Purchase Report", icon: "receipt" },
+        { id: "expense-report", label: "Expense Rept", icon: "cash" },
       ],
     },
     {
-      heading: "Manufacturing & Works",
+      heading: "Basic Master Data",
       items: [
-        { id: "products", label: "Machine Products", icon: "product", badge: "100" },
-        { id: "inventory", label: "Stores & Materials", icon: "inventory" },
-        { id: "projects", label: "Client Projects", icon: "project", badge: "25" },
-        { id: "machines", label: "Deployed Fleet", icon: "machine", badge: "30" },
-        { id: "services", label: "Service & AMC", icon: "service" },
-      ],
-    },
-    {
-      heading: "People & Finance",
-      items: [
-        { id: "employees", label: "Staff & Attendance", icon: "employee" },
-        { id: "expense", label: "Expenses & Vouchers", icon: "expense" },
-        { id: "accounting", label: "Financial Ledger", icon: "accounting" },
-      ],
-    },
-    {
-      heading: "Analytics & Control",
-      items: [
-        { id: "reports", label: "Reports Dashboard", icon: "report" },
-        { id: "settings", label: "Company Settings", icon: "settings" },
+        { id: "customers", label: "Customers", icon: "customer", badge: "50" },
+        { id: "suppliers", label: "Suppliers", icon: "supplier", badge: "40" },
+        { id: "settings", label: "Settings", icon: "settings" },
       ],
     },
   ];
@@ -101,15 +77,15 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         />
       )}
 
-      {/* Sidebar Container */}
+      {/* Sidebar Panel */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#0B1F3A] text-white border-r border-[#1B3B66] flex flex-col transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* Header Branding */}
+        {/* Brand Header */}
         <div className="h-16 flex items-center justify-between px-5 border-b border-[#1B3B66] shrink-0">
-          <Brand inverse size="sm" showSubtitle={false} />
+          <Brand inverse={true} size="sm" showSubtitle={false} />
           <button
             onClick={onClose}
             className="lg:hidden p-1.5 text-slate-400 hover:text-white rounded-xs"
@@ -119,7 +95,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           </button>
         </div>
 
-        {/* Location & Status Pill */}
+        {/* Industrial Status Strip */}
         <div className="px-5 py-3 border-b border-[#1B3B66] bg-[#071526]/50 shrink-0">
           <div className="flex items-center justify-between text-[10px]">
             <span className="font-bold uppercase tracking-wider text-slate-400">
@@ -135,27 +111,27 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           </div>
         </div>
 
-        {/* Navigation Scrollable Area */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
-          {groups.map((group) => (
-            <div key={group.heading}>
+        {/* Navigation List */}
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+          {groups.map((grp) => (
+            <div key={grp.heading}>
               <div className="px-3 text-[9px] font-black uppercase tracking-[0.2em] text-[#3A6EA5] mb-2">
-                {group.heading}
+                {grp.heading}
               </div>
               <div className="space-y-0.5">
-                {group.items.map((item) => {
+                {grp.items.map((item) => {
                   const isActive = activeTab === item.id;
                   return (
                     <button
                       key={item.id}
                       onClick={() => {
                         onSelectTab(item.id);
-                        if (window.innerWidth < 1024) onClose();
+                        onClose();
                       }}
                       className={`w-full flex items-center justify-between px-3 py-2 text-xs font-bold rounded-xs transition-colors ${
                         isActive
                           ? "bg-[#F57C00] text-white shadow-sm"
-                          : "text-slate-300 hover:text-white hover:bg-[#132D50]"
+                          : "text-slate-300 hover:bg-[#132D50] hover:text-white"
                       }`}
                     >
                       <div className="flex items-center gap-2.5 truncate">
@@ -164,8 +140,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       </div>
                       {item.badge && (
                         <span
-                          className={`text-[9px] px-1.5 py-0.2 rounded-xs font-black ${
-                            isActive ? "bg-[#0B1F3A] text-white" : "bg-[#1B3B66] text-[#F57C00]"
+                          className={`text-[10px] font-bold px-1.5 py-0.2 rounded-xs ${
+                            isActive ? "bg-white/20 text-white" : "bg-[#1B3B66] text-slate-300"
                           }`}
                         >
                           {item.badge}
@@ -179,29 +155,29 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           ))}
         </nav>
 
-        {/* User Info & Sign Out Footer */}
-        <div className="p-3 border-t border-[#1B3B66] bg-[#071526]/80 shrink-0">
-          <div className="flex items-center justify-between p-2 rounded-xs bg-[#0B1F3A] border border-[#1B3B66]">
+        {/* Footer Role / Sign Out */}
+        <div className="p-4 border-t border-[#1B3B66] bg-[#071526]/80 shrink-0">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="size-8 rounded-xs bg-[#F57C00] text-[#0B1F3A] font-black text-xs flex items-center justify-center shrink-0">
-                {userRole === "Admin" ? "SB" : "GC"}
+              <div className="size-8 rounded-xs bg-[#F57C00] flex items-center justify-center font-bold text-xs text-white shrink-0">
+                {userRole === "Admin" ? "SB" : "EMP"}
               </div>
               <div className="min-w-0">
                 <div className="text-xs font-black text-white truncate">
-                  {userRole === "Admin" ? "Shailesh Bhor" : "Operations User"}
+                  {userRole === "Admin" ? "Shailesh Bhor" : "Global CNC Staff"}
                 </div>
-                <div className="text-[10px] text-slate-400">
-                  {userRole === "Admin" ? "Managing Director" : "Employee Portal"}
+                <div className="text-[10px] text-slate-400 truncate">
+                  {userRole === "Admin" ? "Managing Director" : "Operations Exec"}
                 </div>
               </div>
             </div>
 
             <button
               onClick={onSignOut}
-              className="p-1.5 text-slate-400 hover:text-rose-400 rounded-xs transition-colors"
-              title="Sign Out to Website"
+              className="p-1.5 text-slate-400 hover:text-white hover:bg-[#132D50] rounded-xs"
+              title="Sign Out"
             >
-              <Icon name="close" size={16} />
+              <Icon name="logout" size={16} />
             </button>
           </div>
         </div>

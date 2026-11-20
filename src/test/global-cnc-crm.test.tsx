@@ -67,8 +67,8 @@ describe("Global CNC CRM Public Landing Page", () => {
   });
 });
 
-describe("Global CNC CRM Admin Panel & Login", () => {
-  it("opens login modal when clicking CRM Login button and logs in as Admin", () => {
+describe("Global CNC CRM Admin Panel & Simplified Navigation", () => {
+  it("opens login modal, authenticates as Admin and renders simplified CRM sections", () => {
     render(<GlobalCncApp />);
     const crmBtn = screen.getAllByRole("button", { name: /crm login/i })[0];
     fireEvent.click(crmBtn);
@@ -76,7 +76,7 @@ describe("Global CNC CRM Admin Panel & Login", () => {
     // Modal title should appear
     expect(screen.getByText(/Staff & Management Login/i)).toBeInTheDocument();
 
-    // Fill in admin credentials using the modal inputs
+    // Fill in admin credentials
     const emailInputs = screen.getAllByLabelText(/Work Email/i);
     const emailInput = emailInputs[emailInputs.length - 1];
     const passInput = screen.getByLabelText(/Password/i);
@@ -89,6 +89,14 @@ describe("Global CNC CRM Admin Panel & Login", () => {
     // After login, admin dashboard should be visible
     expect(screen.getByText(/Manufacturing & Commercial Pulse/i)).toBeInTheDocument();
     expect(screen.getByText(/Today's Sales/i)).toBeInTheDocument();
-    expect(screen.getByText(/Dashboard & KPIs/i)).toBeInTheDocument();
+
+    // Validate simplified admin sections required by user
+    expect(screen.getAllByRole("button", { name: /Purchase/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: /Expense/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: /Sale/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: /Profit Revenue/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: /Purchase Report/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: /Expense Rept/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: /Sales Report/i }).length).toBeGreaterThan(0);
   });
 });
