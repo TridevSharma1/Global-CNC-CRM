@@ -1,16 +1,35 @@
 import React, { useState, useMemo } from "react";
 import { Icon } from "../common/Icons";
+import { MultiFilterBar, FilterOption } from "../common/MultiFilterBar";
+import { matchesMachineFilter, matchesMonthFilter } from "../../utils/filterUtils";
 import { salesData } from "../../data/sales";
 import { purchasesData } from "../../data/purchases";
 import { expensesData } from "../../data/expenses";
 
 export const ProfitRevenueModule: React.FC = () => {
   const [filterYear, setFilterYear] = useState("2026");
+  const [machineFilter, setMachineFilter] = useState("All");
+  const [monthFilter, setMonthFilter] = useState("All");
+  const [profitabilityFilter, setProfitabilityFilter] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
   const [toastMessage, setToastMessage] = useState("");
+
+  const profitabilityOptions: FilterOption[] = [
+    { value: "All", label: "All Margins" },
+    { value: "High", label: "High Margin (>35%)" },
+    { value: "Standard", label: "Standard Margin (20-35%)" },
+  ];
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(""), 2800);
+  };
+
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setMachineFilter("All");
+    setMonthFilter("All");
+    setProfitabilityFilter("All");
   };
 
   const formatPrice = (val: number) =>
@@ -20,12 +39,59 @@ export const ProfitRevenueModule: React.FC = () => {
       maximumFractionDigits: 0,
     }).format(val);
 
-  // Financial aggregates
-  const totalRevenue = useMemo(() => salesData.reduce((acc, s) => acc + s.amount, 0), []);
-  const totalPurchaseCost = useMemo(() => purchasesData.reduce((acc, p) => acc + p.amount, 0), []);
+  // Filtered datasets for active machine and month
+  const filteredSales = useMemo(() => {
+    return salesData.filter((s) => {
+      const matchSearch =
+        s.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.reference.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.productName.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchMachine = matchesMachineFilter(machineFilter, s.category, s.productName, s.notes);
+      const matchMonth = matchesMonthFilter(s.date, monthFilter);
+      return matchSearch && matchMachine && matchMonth;
+    });
+  }, [searchQuery, machineFilter, monthFilter]);
+
+  const filteredPurchases = useMemo(() => {
+    return purchasesData.filter((p) => {
+      const matchSearch =
+        p.supplierName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.reference.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.itemDescription.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchMachine = matchesMachineFilter(
+        machineFilter,
+        p.category,
+        p.itemDescription,
+        p.warehouse,
+      );
+      const matchMonth = matchesMonthFilter(p.date, monthFilter);
+      return matchSearch && matchMachine && matchMonth;
+    });
+  }, [searchQuery, machineFilter, monthFilter]);
+
+  const filteredExpenses = useMemo(() => {
+    return expensesData.filter((e) => {
+      const matchSearch =
+        e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        e.reference.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchMachine = matchesMachineFilter(machineFilter, e.category, e.title, e.notes);
+      const matchMonth = matchesMonthFilter(e.date, monthFilter);
+      return matchSearch && matchMachine && matchMonth;
+    });
+  }, [searchQuery, machineFilter, monthFilter]);
+
+  // Financial aggregates calculated from filtered selections
+  const totalRevenue = useMemo(
+    () => filteredSales.reduce((acc, s) => acc + s.amount, 0),
+    [filteredSales],
+  );
+  const totalPurchaseCost = useMemo(
+    () => filteredPurchases.reduce((acc, p) => acc + p.amount, 0),
+    [filteredPurchases],
+  );
   const totalOperatingExpense = useMemo(
-    () => expensesData.reduce((acc, e) => acc + e.amount, 0),
-    [],
+    () => filteredExpenses.reduce((acc, e) => acc + e.amount, 0),
+    [filteredExpenses],
   );
   const netProfit = totalRevenue - totalPurchaseCost - totalOperatingExpense;
   const profitMarginPercent =
@@ -33,22 +99,90 @@ export const ProfitRevenueModule: React.FC = () => {
 
   // Monthly ledger data (Synthesized from actual data)
   const monthlyLedger = [
-    { month: "Jan 2026", sales: 16500000, purchases: 8200000, expenses: 1450000 },
-    { month: "Feb 2026", sales: 17200000, purchases: 8600000, expenses: 1520000 },
-    { month: "Mar 2026", sales: 19800000, purchases: 9800000, expenses: 1680000 },
-    { month: "Apr 2026", sales: 15400000, purchases: 7600000, expenses: 1350000 },
-    { month: "May 2026", sales: 18100000, purchases: 9100000, expenses: 1580000 },
-    { month: "Jun 2026", sales: 21500000, purchases: 10400000, expenses: 1820000 },
-    { month: "Jul 2026", sales: 18900000, purchases: 9300000, expenses: 1620000 },
-    { month: "Aug 2026", sales: 17800000, purchases: 8900000, expenses: 1540000 },
-    { month: "Sep 2026", sales: 20400000, purchases: 10100000, expenses: 1740000 },
-    { month: "Oct 2026", sales: 22800000, purchases: 11200000, expenses: 1950000 },
-    { month: "Nov 2026", sales: 18450000, purchases: 9240000, expenses: 1610000 },
-  ].map((m) => {
-    const profit = m.sales - m.purchases - m.expenses;
-    const margin = ((profit / m.sales) * 100).toFixed(1);
-    return { ...m, profit, margin };
-  });
+    {
+      month: "Jan 2026",
+      monthCode: "2026-01",
+      sales: 16500000,
+      purchases: 8200000,
+      expenses: 1450000,
+    },
+    {
+      month: "Feb 2026",
+      monthCode: "2026-02",
+      sales: 17200000,
+      purchases: 8600000,
+      expenses: 1520000,
+    },
+    {
+      month: "Mar 2026",
+      monthCode: "2026-03",
+      sales: 19800000,
+      purchases: 9800000,
+      expenses: 1680000,
+    },
+    {
+      month: "Apr 2026",
+      monthCode: "2026-04",
+      sales: 15400000,
+      purchases: 7600000,
+      expenses: 1350000,
+    },
+    {
+      month: "May 2026",
+      monthCode: "2026-05",
+      sales: 18100000,
+      purchases: 9100000,
+      expenses: 1580000,
+    },
+    {
+      month: "Jun 2026",
+      monthCode: "2026-06",
+      sales: 21500000,
+      purchases: 10400000,
+      expenses: 1820000,
+    },
+    {
+      month: "Jul 2026",
+      monthCode: "2026-07",
+      sales: 18900000,
+      purchases: 9300000,
+      expenses: 1620000,
+    },
+    {
+      month: "Aug 2026",
+      monthCode: "2026-08",
+      sales: 17800000,
+      purchases: 8900000,
+      expenses: 1540000,
+    },
+    {
+      month: "Sep 2026",
+      monthCode: "2026-09",
+      sales: 20400000,
+      purchases: 10100000,
+      expenses: 1740000,
+    },
+    {
+      month: "Oct 2026",
+      monthCode: "2026-10",
+      sales: 22800000,
+      purchases: 11200000,
+      expenses: 1950000,
+    },
+    {
+      month: "Nov 2026",
+      monthCode: "2026-11",
+      sales: 18450000,
+      purchases: 9240000,
+      expenses: 1610000,
+    },
+  ]
+    .filter((m) => monthFilter === "All" || m.monthCode === monthFilter)
+    .map((m) => {
+      const profit = m.sales - m.purchases - m.expenses;
+      const margin = ((profit / m.sales) * 100).toFixed(1);
+      return { ...m, profit, margin };
+    });
 
   const handlePrint = () => {
     window.print();
@@ -123,6 +257,28 @@ export const ProfitRevenueModule: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Multi-Filter Bar (Machine-Wise, Month, Profitability, Search) */}
+      <MultiFilterBar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Search machine equipment, customer, or ledger line..."
+        machineFilter={machineFilter}
+        onMachineChange={setMachineFilter}
+        monthFilter={monthFilter}
+        onMonthChange={setMonthFilter}
+        statusFilter="All"
+        onStatusChange={() => {}}
+        statusOptions={[{ value: "All", label: "All Operational Statuses" }]}
+        secondaryFilter={profitabilityFilter}
+        onSecondaryChange={setProfitabilityFilter}
+        secondaryLabel="Margin"
+        secondaryOptions={profitabilityOptions}
+        totalItems={salesData.length}
+        filteredCount={filteredSales.length}
+        totalFilteredAmount={netProfit}
+        onResetAll={handleResetFilters}
+      />
 
       {/* 4 Financial Pillar Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

@@ -3,19 +3,51 @@ import { Icon } from "../common/Icons";
 import { StatusBadge } from "../common/StatusBadge";
 import { Pagination } from "../common/Pagination";
 import { Modal } from "../common/Modal";
+import { MultiFilterBar, FilterOption } from "../common/MultiFilterBar";
+import { matchesMachineFilter, matchesMonthFilter } from "../../utils/filterUtils";
 import { purchasesData, PurchaseOrder } from "../../data/purchases";
 
 export const PurchaseReportModule: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [machineFilter, setMachineFilter] = useState("All");
+  const [monthFilter, setMonthFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [categoryFilter, setCategoryFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [selectedPO, setSelectedPO] = useState<PurchaseOrder | null>(null);
   const [toastMessage, setToastMessage] = useState("");
 
+  const statusOptions: FilterOption[] = [
+    { value: "All", label: "All Sourcing Statuses" },
+    { value: "Approved", label: "Approved" },
+    { value: "Received", label: "Received / Stocked" },
+    { value: "Pending Approval", label: "Pending Approval" },
+    { value: "In Transit", label: "In Transit" },
+    { value: "Draft", label: "Draft" },
+  ];
+
+  const categoryOptions: FilterOption[] = [
+    { value: "All", label: "All Categories" },
+    { value: "CNC Controllers & Drives", label: "CNC Controllers & Drives" },
+    { value: "Linear Motion & Bearings", label: "Linear Motion & Bearings" },
+    { value: "Raw Steel & Castings", label: "Raw Steel & Castings" },
+    { value: "Spindles & Motors", label: "Spindles & Motors" },
+    { value: "Lubricants & Coolants", label: "Lubricants & Coolants" },
+  ];
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(""), 2800);
+  };
+
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setMachineFilter("All");
+    setMonthFilter("All");
+    setStatusFilter("All");
+    setCategoryFilter("All");
+    setCurrentPage(1);
   };
 
   const formatPrice = (val: number) =>
@@ -35,17 +67,36 @@ export const PurchaseReportModule: React.FC = () => {
         p.category.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchStatus = statusFilter === "All" || p.status === statusFilter;
-      return matchSearch && matchStatus;
-    });
-  }, [searchQuery, statusFilter]);
+      const matchCategory = categoryFilter === "All" || p.category === categoryFilter;
+      const matchMachine = matchesMachineFilter(
+        machineFilter,
+        p.category,
+        p.itemDescription,
+        p.warehouse,
+      );
+      const matchMonth = matchesMonthFilter(p.date, monthFilter);
 
-  // Totals
-  const totalAmount = useMemo(() => purchasesData.reduce((acc, p) => acc + p.amount, 0), []);
-  const totalGst = useMemo(() => purchasesData.reduce((acc, p) => acc + p.gstAmount, 0), []);
-  const totalSpend = useMemo(() => purchasesData.reduce((acc, p) => acc + p.totalAmount, 0), []);
+      return matchSearch && matchStatus && matchCategory && matchMachine && matchMonth;
+    });
+  }, [searchQuery, statusFilter, categoryFilter, machineFilter, monthFilter]);
+
+  // Totals calculated from filtered selection
+  const totalAmount = useMemo(
+    () => filteredPurchases.reduce((acc, p) => acc + p.amount, 0),
+    [filteredPurchases],
+  );
+  const totalGst = useMemo(
+    () => filteredPurchases.reduce((acc, p) => acc + p.gstAmount, 0),
+    [filteredPurchases],
+  );
+  const totalSpend = useMemo(
+    () => filteredPurchases.reduce((acc, p) => acc + p.totalAmount, 0),
+    [filteredPurchases],
+  );
   const receivedCount = useMemo(
-    () => purchasesData.filter((p) => p.status === "Received" || p.status === "Approved").length,
-    [],
+    () =>
+      filteredPurchases.filter((p) => p.status === "Received" || p.status === "Approved").length,
+    [filteredPurchases],
   );
 
   // Pagination
@@ -170,43 +221,42 @@ export const PurchaseReportModule: React.FC = () => {
         </div>
       </div>
 
-      {/* Filters & Search */}
-      <div className="bg-white dark:bg-[#0B1F3A] border border-slate-200 dark:border-slate-800 p-4 rounded-sm flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          {["All", "Approved", "Received", "Pending", "Draft"].map((st) => (
-            <button
-              key={st}
-              onClick={() => {
-                setStatusFilter(st);
-                setCurrentPage(1);
-              }}
-              className={`px-3 py-1.5 text-xs font-bold rounded-xs transition-colors ${
-                statusFilter === st
-                  ? "bg-[#0B1F3A] dark:bg-[#3A6EA5] text-white"
-                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200"
-              }`}
-            >
-              {st}
-            </button>
-          ))}
-        </div>
-
-        <div className="relative w-full sm:w-64">
-          <span className="absolute inset-y-0 left-2.5 flex items-center text-slate-400">
-            <Icon name="search" size={14} />
-          </span>
-          <input
-            type="text"
-            placeholder="Search PO, supplier, part..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-[#071526] border border-slate-200 dark:border-slate-700 rounded-sm text-slate-800 dark:text-white placeholder-slate-400 outline-none focus:border-[#3A6EA5]"
-          />
-        </div>
-      </div>
+      {/* Multi-Filter Bar (Machine-Wise, Month, Status, Sourcing Category, Search) */}
+      <MultiFilterBar
+        searchQuery={searchQuery}
+        onSearchChange={(q) => {
+          setSearchQuery(q);
+          setCurrentPage(1);
+        }}
+        searchPlaceholder="Search PO ref, supplier, or machine part..."
+        machineFilter={machineFilter}
+        onMachineChange={(m) => {
+          setMachineFilter(m);
+          setCurrentPage(1);
+        }}
+        monthFilter={monthFilter}
+        onMonthChange={(mo) => {
+          setMonthFilter(mo);
+          setCurrentPage(1);
+        }}
+        statusFilter={statusFilter}
+        onStatusChange={(st) => {
+          setStatusFilter(st);
+          setCurrentPage(1);
+        }}
+        statusOptions={statusOptions}
+        secondaryFilter={categoryFilter}
+        onSecondaryChange={(c) => {
+          setCategoryFilter(c);
+          setCurrentPage(1);
+        }}
+        secondaryLabel="Category"
+        secondaryOptions={categoryOptions}
+        totalItems={purchasesData.length}
+        filteredCount={filteredPurchases.length}
+        totalFilteredAmount={totalSpend}
+        onResetAll={handleResetFilters}
+      />
 
       {/* Table */}
       <div className="bg-white dark:bg-[#0B1F3A] border border-slate-200 dark:border-slate-800 rounded-sm shadow-xs overflow-hidden">

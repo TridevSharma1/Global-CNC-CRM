@@ -3,19 +3,48 @@ import { Icon } from "../common/Icons";
 import { StatusBadge } from "../common/StatusBadge";
 import { Pagination } from "../common/Pagination";
 import { Modal } from "../common/Modal";
+import { MultiFilterBar, FilterOption } from "../common/MultiFilterBar";
+import { matchesMachineFilter, matchesMonthFilter } from "../../utils/filterUtils";
 import { expensesData, ExpenseItem } from "../../data/expenses";
 
 export const ExpenseReportModule: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [machineFilter, setMachineFilter] = useState("All");
+  const [monthFilter, setMonthFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("All");
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [selectedExpense, setSelectedExpense] = useState<ExpenseItem | null>(null);
   const [toastMessage, setToastMessage] = useState("");
 
+  const statusOptions: FilterOption[] = [
+    { value: "All", label: "All Audit Statuses" },
+    { value: "Approved", label: "Approved" },
+    { value: "Pending Approval", label: "Pending Approval" },
+    { value: "Paid", label: "Paid" },
+  ];
+
+  const categoryOptions: FilterOption[] = useMemo(() => {
+    const set = new Set(expensesData.map((e) => e.category));
+    return [
+      { value: "All", label: "All Overheads" },
+      ...Array.from(set).map((c) => ({ value: c, label: c })),
+    ];
+  }, []);
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(""), 2800);
+  };
+
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setMachineFilter("All");
+    setMonthFilter("All");
+    setStatusFilter("All");
+    setCategoryFilter("All");
+    setCurrentPage(1);
   };
 
   const formatPrice = (val: number) =>
@@ -25,11 +54,6 @@ export const ExpenseReportModule: React.FC = () => {
       maximumFractionDigits: 0,
     }).format(val);
 
-  const categories = useMemo(() => {
-    const set = new Set(expensesData.map((e) => e.category));
-    return ["All", ...Array.from(set)];
-  }, []);
-
   // Filtered expenses
   const filteredExpenses = useMemo(() => {
     return expensesData.filter((e) => {
@@ -37,29 +61,37 @@ export const ExpenseReportModule: React.FC = () => {
         e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         e.reference.toLowerCase().includes(searchQuery.toLowerCase()) ||
         e.recordedBy.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        e.paymentMethod.toLowerCase().includes(searchQuery.toLowerCase());
+        e.paymentMethod.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        e.notes.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchCategory = categoryFilter === "All" || e.category === categoryFilter;
-      return matchSearch && matchCategory;
-    });
-  }, [searchQuery, categoryFilter]);
+      const matchStatus = statusFilter === "All" || e.status === statusFilter;
+      const matchMachine = matchesMachineFilter(machineFilter, e.category, e.title, e.notes);
+      const matchMonth = matchesMonthFilter(e.date, monthFilter);
 
-  // Totals
-  const totalAmount = useMemo(() => expensesData.reduce((acc, e) => acc + e.amount, 0), []);
+      return matchSearch && matchCategory && matchStatus && matchMachine && matchMonth;
+    });
+  }, [searchQuery, categoryFilter, statusFilter, machineFilter, monthFilter]);
+
+  // Totals calculated from filtered selection
+  const totalAmount = useMemo(
+    () => filteredExpenses.reduce((acc, e) => acc + e.amount, 0),
+    [filteredExpenses],
+  );
   const approvedAmount = useMemo(
     () =>
-      expensesData
+      filteredExpenses
         .filter((e) => e.status === "Approved" || e.status === "Paid")
         .reduce((acc, e) => acc + e.amount, 0),
-    [],
+    [filteredExpenses],
   );
   const approvedCount = useMemo(
-    () => expensesData.filter((e) => e.status === "Approved" || e.status === "Paid").length,
-    [],
+    () => filteredExpenses.filter((e) => e.status === "Approved" || e.status === "Paid").length,
+    [filteredExpenses],
   );
   const pendingCount = useMemo(
-    () => expensesData.filter((e) => e.status === "Pending Approval").length,
-    [],
+    () => filteredExpenses.filter((e) => e.status === "Pending Approval").length,
+    [filteredExpenses],
   );
 
   // Pagination
@@ -183,43 +215,42 @@ export const ExpenseReportModule: React.FC = () => {
         </div>
       </div>
 
-      {/* Category Filter & Search */}
-      <div className="bg-white dark:bg-[#0B1F3A] border border-slate-200 dark:border-slate-800 p-4 rounded-sm flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-1.5 max-w-2xl">
-          {categories.slice(0, 6).map((cat) => (
-            <button
-              key={cat}
-              onClick={() => {
-                setCategoryFilter(cat);
-                setCurrentPage(1);
-              }}
-              className={`px-3 py-1.5 text-xs font-bold rounded-xs transition-colors ${
-                categoryFilter === cat
-                  ? "bg-[#0B1F3A] dark:bg-[#3A6EA5] text-white"
-                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200"
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-
-        <div className="relative w-full sm:w-64">
-          <span className="absolute inset-y-0 left-2.5 flex items-center text-slate-400">
-            <Icon name="search" size={14} />
-          </span>
-          <input
-            type="text"
-            placeholder="Search voucher, title, owner..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-[#071526] border border-slate-200 dark:border-slate-700 rounded-sm text-slate-800 dark:text-white placeholder-slate-400 outline-none focus:border-[#3A6EA5]"
-          />
-        </div>
-      </div>
+      {/* Multi-Filter Bar (Machine-Wise, Month, Status, Overhead Category, Search) */}
+      <MultiFilterBar
+        searchQuery={searchQuery}
+        onSearchChange={(q) => {
+          setSearchQuery(q);
+          setCurrentPage(1);
+        }}
+        searchPlaceholder="Search voucher ref, title, or machine line..."
+        machineFilter={machineFilter}
+        onMachineChange={(m) => {
+          setMachineFilter(m);
+          setCurrentPage(1);
+        }}
+        monthFilter={monthFilter}
+        onMonthChange={(mo) => {
+          setMonthFilter(mo);
+          setCurrentPage(1);
+        }}
+        statusFilter={statusFilter}
+        onStatusChange={(st) => {
+          setStatusFilter(st);
+          setCurrentPage(1);
+        }}
+        statusOptions={statusOptions}
+        secondaryFilter={categoryFilter}
+        onSecondaryChange={(c) => {
+          setCategoryFilter(c);
+          setCurrentPage(1);
+        }}
+        secondaryLabel="Category"
+        secondaryOptions={categoryOptions}
+        totalItems={expensesData.length}
+        filteredCount={filteredExpenses.length}
+        totalFilteredAmount={totalAmount}
+        onResetAll={handleResetFilters}
+      />
 
       {/* Table */}
       <div className="bg-white dark:bg-[#0B1F3A] border border-slate-200 dark:border-slate-800 rounded-sm shadow-xs overflow-hidden">

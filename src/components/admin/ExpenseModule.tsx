@@ -3,17 +3,38 @@ import { Icon } from "../common/Icons";
 import { StatusBadge } from "../common/StatusBadge";
 import { Pagination } from "../common/Pagination";
 import { Modal } from "../common/Modal";
+import { MultiFilterBar, FilterOption } from "../common/MultiFilterBar";
+import { matchesMachineFilter, matchesMonthFilter } from "../../utils/filterUtils";
 import { expensesData } from "../../data/expenses";
 
 export const ExpenseModule: React.FC = () => {
   const [expenses, setExpenses] = useState(expensesData);
   const [searchQuery, setSearchQuery] = useState("");
+  const [machineFilter, setMachineFilter] = useState("All");
+  const [monthFilter, setMonthFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("All");
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [selectedExpense, setSelectedExpense] = useState<(typeof expensesData)[0] | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+
+  const statusOptions: FilterOption[] = [
+    { value: "All", label: "All Voucher Statuses" },
+    { value: "Approved", label: "Approved" },
+    { value: "Pending Approval", label: "Pending Approval" },
+    { value: "Paid", label: "Paid" },
+  ];
+
+  const categoryOptions: FilterOption[] = [
+    { value: "All", label: "All Categories" },
+    { value: "Factory Utilities & Power", label: "Factory Utilities & Power" },
+    { value: "Tooling & Consumables", label: "Tooling & Consumables" },
+    { value: "Freight, Shipping & Logistics", label: "Freight & Logistics" },
+    { value: "Workshop Maintenance & Upkeep", label: "Workshop Upkeep" },
+    { value: "Machine Commissioning & Travel", label: "Commissioning & Travel" },
+  ];
 
   const [newExp, setNewExp] = useState({
     title: "",
@@ -25,21 +46,18 @@ export const ExpenseModule: React.FC = () => {
     notes: "",
   });
 
-  const categories = [
-    "All",
-    "Factory Utilities & Power",
-    "Tooling & Consumables",
-    "Freight, Shipping & Logistics",
-    "Machine Commissioning & Travel",
-    "Workshop Maintenance & Upkeep",
-    "R&D and Machine Prototyping",
-    "Employee Training & Safety PPE",
-    "Office Administration & Compliance",
-  ];
-
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(""), 2800);
+  };
+
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setMachineFilter("All");
+    setMonthFilter("All");
+    setStatusFilter("All");
+    setCategoryFilter("All");
+    setCurrentPage(1);
   };
 
   const filteredExpenses = useMemo(() => {
@@ -47,13 +65,29 @@ export const ExpenseModule: React.FC = () => {
       const matchesSearch =
         item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.reference.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.recordedBy.toLowerCase().includes(searchQuery.toLowerCase());
+        item.recordedBy.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.paymentMethod.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.notes.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = categoryFilter === "All" || item.category === categoryFilter;
-      return matchesSearch && matchesCategory;
-    });
-  }, [expenses, searchQuery, categoryFilter]);
+      const matchesStatus = statusFilter === "All" || item.status === statusFilter;
+      const matchesMachine = matchesMachineFilter(
+        machineFilter,
+        item.category,
+        item.title,
+        item.notes,
+      );
+      const matchesMonth = matchesMonthFilter(item.date, monthFilter);
 
-  const totalPages = Math.ceil(filteredExpenses.length / pageSize);
+      return matchesSearch && matchesCategory && matchesStatus && matchesMachine && matchesMonth;
+    });
+  }, [expenses, searchQuery, categoryFilter, statusFilter, machineFilter, monthFilter]);
+
+  const totalFilteredAmount = useMemo(
+    () => filteredExpenses.reduce((acc, curr) => acc + curr.amount, 0),
+    [filteredExpenses],
+  );
+
+  const totalPages = Math.ceil(filteredExpenses.length / pageSize) || 1;
   const displayedExpenses = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return filteredExpenses.slice(start, start + pageSize);
@@ -178,39 +212,42 @@ export const ExpenseModule: React.FC = () => {
         </div>
       </div>
 
-      {/* Search & Filter */}
-      <div className="bg-white dark:bg-[#0B1F3A] border border-slate-200 dark:border-slate-800 p-3.5 rounded-sm flex flex-wrap items-center justify-between gap-3">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <span className="absolute inset-y-0 left-2.5 flex items-center text-slate-400">
-            <Icon name="search" size={14} />
-          </span>
-          <input
-            type="text"
-            placeholder="Search expenses by title or reference..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-[#071526] border border-slate-300 dark:border-slate-700 rounded-sm text-slate-800 dark:text-white outline-none focus:border-[#3A6EA5]"
-          />
-        </div>
-
-        <select
-          value={categoryFilter}
-          onChange={(e) => {
-            setCategoryFilter(e.target.value);
-            setCurrentPage(1);
-          }}
-          className="h-8 px-2.5 text-xs bg-slate-50 dark:bg-[#071526] border border-slate-300 dark:border-slate-700 rounded-sm text-slate-700 dark:text-slate-300 outline-none max-w-xs"
-        >
-          {categories.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* Multi-Filter Bar (Machine-Wise, Month, Status, Expense Category, Search) */}
+      <MultiFilterBar
+        searchQuery={searchQuery}
+        onSearchChange={(q) => {
+          setSearchQuery(q);
+          setCurrentPage(1);
+        }}
+        searchPlaceholder="Search expense voucher, title, or machine line..."
+        machineFilter={machineFilter}
+        onMachineChange={(m) => {
+          setMachineFilter(m);
+          setCurrentPage(1);
+        }}
+        monthFilter={monthFilter}
+        onMonthChange={(mo) => {
+          setMonthFilter(mo);
+          setCurrentPage(1);
+        }}
+        statusFilter={statusFilter}
+        onStatusChange={(st) => {
+          setStatusFilter(st);
+          setCurrentPage(1);
+        }}
+        statusOptions={statusOptions}
+        secondaryFilter={categoryFilter}
+        onSecondaryChange={(c) => {
+          setCategoryFilter(c);
+          setCurrentPage(1);
+        }}
+        secondaryLabel="Category"
+        secondaryOptions={categoryOptions}
+        totalItems={expenses.length}
+        filteredCount={filteredExpenses.length}
+        totalFilteredAmount={totalFilteredAmount}
+        onResetAll={handleResetFilters}
+      />
 
       {/* Table */}
       <div className="bg-white dark:bg-[#0B1F3A] border border-slate-200 dark:border-slate-800 rounded-sm overflow-hidden">

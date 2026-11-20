@@ -3,19 +3,50 @@ import { Icon } from "../common/Icons";
 import { StatusBadge } from "../common/StatusBadge";
 import { Pagination } from "../common/Pagination";
 import { Modal } from "../common/Modal";
+import { MultiFilterBar, FilterOption } from "../common/MultiFilterBar";
+import { matchesMachineFilter, matchesMonthFilter } from "../../utils/filterUtils";
 import { salesData, SaleOrder } from "../../data/sales";
 
 export const SalesReportModule: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [machineFilter, setMachineFilter] = useState("All");
+  const [monthFilter, setMonthFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [paymentFilter, setPaymentFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [selectedSale, setSelectedSale] = useState<SaleOrder | null>(null);
   const [toastMessage, setToastMessage] = useState("");
 
+  const statusOptions: FilterOption[] = [
+    { value: "All", label: "All Realization Statuses" },
+    { value: "Paid", label: "Paid" },
+    { value: "Pending", label: "Pending" },
+    { value: "In progress", label: "In progress" },
+    { value: "Completed", label: "Completed" },
+    { value: "Partially Paid", label: "Partially Paid" },
+    { value: "Overdue", label: "Overdue" },
+  ];
+
+  const paymentOptions: FilterOption[] = [
+    { value: "All", label: "All Payment Terms" },
+    { value: "Paid", label: "100% Cleared" },
+    { value: "Partial", label: "Partial Advance" },
+    { value: "Pending", label: "Payment Pending" },
+  ];
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(""), 2800);
+  };
+
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setMachineFilter("All");
+    setMonthFilter("All");
+    setStatusFilter("All");
+    setPaymentFilter("All");
+    setCurrentPage(1);
   };
 
   const formatPrice = (val: number) =>
@@ -35,16 +66,38 @@ export const SalesReportModule: React.FC = () => {
         s.salesPerson.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchStatus = statusFilter === "All" || s.status === statusFilter;
-      return matchSearch && matchStatus;
-    });
-  }, [searchQuery, statusFilter]);
+      const matchMachine = matchesMachineFilter(machineFilter, s.category, s.productName, s.notes);
+      const matchMonth = matchesMonthFilter(s.date, monthFilter);
+      const matchPayment =
+        paymentFilter === "All" ||
+        (s.paymentStatus && s.paymentStatus.toLowerCase().includes(paymentFilter.toLowerCase()));
 
-  // Totals
-  const totalAmount = useMemo(() => salesData.reduce((acc, s) => acc + s.amount, 0), []);
-  const totalGst = useMemo(() => salesData.reduce((acc, s) => acc + s.gstAmount, 0), []);
-  const totalInvoiced = useMemo(() => salesData.reduce((acc, s) => acc + s.totalAmount, 0), []);
-  const paidCount = useMemo(() => salesData.filter((s) => s.status === "Paid").length, []);
-  const pendingCount = useMemo(() => salesData.filter((s) => s.status !== "Paid").length, []);
+      return matchSearch && matchStatus && matchMachine && matchMonth && matchPayment;
+    });
+  }, [searchQuery, statusFilter, machineFilter, monthFilter, paymentFilter]);
+
+  // Totals for filtered selection
+  const totalAmount = useMemo(
+    () => filteredSales.reduce((acc, s) => acc + s.amount, 0),
+    [filteredSales],
+  );
+  const totalGst = useMemo(
+    () => filteredSales.reduce((acc, s) => acc + s.gstAmount, 0),
+    [filteredSales],
+  );
+  const totalInvoiced = useMemo(
+    () => filteredSales.reduce((acc, s) => acc + s.totalAmount, 0),
+    [filteredSales],
+  );
+  const paidCount = useMemo(
+    () =>
+      filteredSales.filter((s) => s.status === "Paid" || s.paymentStatus?.includes("Paid")).length,
+    [filteredSales],
+  );
+  const pendingCount = useMemo(
+    () => filteredSales.filter((s) => s.status !== "Paid").length,
+    [filteredSales],
+  );
 
   // Pagination
   const totalPages = Math.ceil(filteredSales.length / pageSize) || 1;
@@ -167,43 +220,42 @@ export const SalesReportModule: React.FC = () => {
         </div>
       </div>
 
-      {/* Filters & Search */}
-      <div className="bg-white dark:bg-[#0B1F3A] border border-slate-200 dark:border-slate-800 p-4 rounded-sm flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          {["All", "Paid", "Pending", "Partially Paid", "Overdue"].map((st) => (
-            <button
-              key={st}
-              onClick={() => {
-                setStatusFilter(st);
-                setCurrentPage(1);
-              }}
-              className={`px-3 py-1.5 text-xs font-bold rounded-xs transition-colors ${
-                statusFilter === st
-                  ? "bg-[#0B1F3A] dark:bg-[#3A6EA5] text-white"
-                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200"
-              }`}
-            >
-              {st}
-            </button>
-          ))}
-        </div>
-
-        <div className="relative w-full sm:w-64">
-          <span className="absolute inset-y-0 left-2.5 flex items-center text-slate-400">
-            <Icon name="search" size={14} />
-          </span>
-          <input
-            type="text"
-            placeholder="Search order, customer, product..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-[#071526] border border-slate-200 dark:border-slate-700 rounded-sm text-slate-800 dark:text-white placeholder-slate-400 outline-none focus:border-[#3A6EA5]"
-          />
-        </div>
-      </div>
+      {/* Multi-Filter Bar (Machine-Wise, Month, Status, Payment, Search) */}
+      <MultiFilterBar
+        searchQuery={searchQuery}
+        onSearchChange={(q) => {
+          setSearchQuery(q);
+          setCurrentPage(1);
+        }}
+        searchPlaceholder="Search order ref, customer, or equipment..."
+        machineFilter={machineFilter}
+        onMachineChange={(m) => {
+          setMachineFilter(m);
+          setCurrentPage(1);
+        }}
+        monthFilter={monthFilter}
+        onMonthChange={(mo) => {
+          setMonthFilter(mo);
+          setCurrentPage(1);
+        }}
+        statusFilter={statusFilter}
+        onStatusChange={(st) => {
+          setStatusFilter(st);
+          setCurrentPage(1);
+        }}
+        statusOptions={statusOptions}
+        secondaryFilter={paymentFilter}
+        onSecondaryChange={(p) => {
+          setPaymentFilter(p);
+          setCurrentPage(1);
+        }}
+        secondaryLabel="Payment"
+        secondaryOptions={paymentOptions}
+        totalItems={salesData.length}
+        filteredCount={filteredSales.length}
+        totalFilteredAmount={totalInvoiced}
+        onResetAll={handleResetFilters}
+      />
 
       {/* Table */}
       <div className="bg-white dark:bg-[#0B1F3A] border border-slate-200 dark:border-slate-800 rounded-sm shadow-xs overflow-hidden">

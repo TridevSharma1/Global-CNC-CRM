@@ -3,18 +3,41 @@ import { Icon } from "../common/Icons";
 import { StatusBadge } from "../common/StatusBadge";
 import { Pagination } from "../common/Pagination";
 import { Modal } from "../common/Modal";
+import { MultiFilterBar, FilterOption } from "../common/MultiFilterBar";
+import { matchesMachineFilter, matchesMonthFilter } from "../../utils/filterUtils";
 import { purchasesData } from "../../data/purchases";
 import { suppliersData } from "../../data/suppliers";
 
 export const PurchaseModule: React.FC = () => {
   const [purchases, setPurchases] = useState(purchasesData);
   const [searchQuery, setSearchQuery] = useState("");
+  const [machineFilter, setMachineFilter] = useState("All");
+  const [monthFilter, setMonthFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [categoryFilter, setCategoryFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [selectedPO, setSelectedPO] = useState<(typeof purchasesData)[0] | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+
+  const statusOptions: FilterOption[] = [
+    { value: "All", label: "All PO Statuses" },
+    { value: "Approved", label: "Approved" },
+    { value: "Received", label: "Received" },
+    { value: "Pending Approval", label: "Pending Approval" },
+    { value: "In Transit", label: "In Transit" },
+    { value: "Draft", label: "Draft" },
+  ];
+
+  const categoryOptions: FilterOption[] = [
+    { value: "All", label: "All Categories" },
+    { value: "CNC Controllers & Drives", label: "CNC Controllers & Drives" },
+    { value: "Linear Motion & Bearings", label: "Linear Motion & Bearings" },
+    { value: "Raw Steel & Castings", label: "Raw Steel & Castings" },
+    { value: "Spindles & Motors", label: "Spindles & Motors" },
+    { value: "Lubricants & Coolants", label: "Lubricants & Coolants" },
+  ];
 
   const [newPO, setNewPO] = useState({
     supplierId: suppliersData[0]?.id || 1,
@@ -30,18 +53,43 @@ export const PurchaseModule: React.FC = () => {
     setTimeout(() => setToastMessage(""), 2800);
   };
 
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setMachineFilter("All");
+    setMonthFilter("All");
+    setStatusFilter("All");
+    setCategoryFilter("All");
+    setCurrentPage(1);
+  };
+
   const filteredPurchases = useMemo(() => {
     return purchases.filter((item) => {
       const matchesSearch =
         item.reference.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.supplierName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.itemDescription.toLowerCase().includes(searchQuery.toLowerCase());
+        item.itemDescription.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.warehouse.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus = statusFilter === "All" || item.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-  }, [purchases, searchQuery, statusFilter]);
+      const matchesCategory = categoryFilter === "All" || item.category === categoryFilter;
+      const matchesMachine = matchesMachineFilter(
+        machineFilter,
+        item.category,
+        item.itemDescription,
+        item.warehouse,
+      );
+      const matchesMonth = matchesMonthFilter(item.date, monthFilter);
 
-  const totalPages = Math.ceil(filteredPurchases.length / pageSize);
+      return matchesSearch && matchesStatus && matchesCategory && matchesMachine && matchesMonth;
+    });
+  }, [purchases, searchQuery, statusFilter, categoryFilter, machineFilter, monthFilter]);
+
+  const totalFilteredAmount = useMemo(
+    () => filteredPurchases.reduce((acc, curr) => acc + curr.totalAmount, 0),
+    [filteredPurchases],
+  );
+
+  const totalPages = Math.ceil(filteredPurchases.length / pageSize) || 1;
   const displayedPurchases = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return filteredPurchases.slice(start, start + pageSize);
@@ -172,41 +220,42 @@ export const PurchaseModule: React.FC = () => {
         </div>
       </div>
 
-      {/* Filter & Search Bar */}
-      <div className="bg-white dark:bg-[#0B1F3A] border border-slate-200 dark:border-slate-800 p-3.5 rounded-sm flex flex-wrap items-center justify-between gap-3">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <span className="absolute inset-y-0 left-2.5 flex items-center text-slate-400">
-            <Icon name="search" size={14} />
-          </span>
-          <input
-            type="text"
-            placeholder="Search PO ref, supplier, or items..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-[#071526] border border-slate-300 dark:border-slate-700 rounded-sm text-slate-800 dark:text-white outline-none focus:border-[#3A6EA5]"
-          />
-        </div>
-
-        <div className="flex items-center gap-2">
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="h-8 px-2.5 text-xs bg-slate-50 dark:bg-[#071526] border border-slate-300 dark:border-slate-700 rounded-sm text-slate-700 dark:text-slate-300 outline-none"
-          >
-            <option value="All">All PO Statuses</option>
-            <option value="Approved">Approved</option>
-            <option value="Received">Received</option>
-            <option value="Pending Approval">Pending Approval</option>
-            <option value="In Transit">In Transit</option>
-          </select>
-        </div>
-      </div>
+      {/* Multi-Filter Bar (Machine-Wise, Month, Status, Sourcing Category, Search) */}
+      <MultiFilterBar
+        searchQuery={searchQuery}
+        onSearchChange={(q) => {
+          setSearchQuery(q);
+          setCurrentPage(1);
+        }}
+        searchPlaceholder="Search PO ref, supplier, or machine part..."
+        machineFilter={machineFilter}
+        onMachineChange={(m) => {
+          setMachineFilter(m);
+          setCurrentPage(1);
+        }}
+        monthFilter={monthFilter}
+        onMonthChange={(mo) => {
+          setMonthFilter(mo);
+          setCurrentPage(1);
+        }}
+        statusFilter={statusFilter}
+        onStatusChange={(st) => {
+          setStatusFilter(st);
+          setCurrentPage(1);
+        }}
+        statusOptions={statusOptions}
+        secondaryFilter={categoryFilter}
+        onSecondaryChange={(c) => {
+          setCategoryFilter(c);
+          setCurrentPage(1);
+        }}
+        secondaryLabel="Category"
+        secondaryOptions={categoryOptions}
+        totalItems={purchases.length}
+        filteredCount={filteredPurchases.length}
+        totalFilteredAmount={totalFilteredAmount}
+        onResetAll={handleResetFilters}
+      />
 
       {/* Table */}
       <div className="bg-white dark:bg-[#0B1F3A] border border-slate-200 dark:border-slate-800 rounded-sm overflow-hidden">

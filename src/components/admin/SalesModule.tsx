@@ -3,6 +3,8 @@ import { Icon } from "../common/Icons";
 import { StatusBadge } from "../common/StatusBadge";
 import { Pagination } from "../common/Pagination";
 import { Modal } from "../common/Modal";
+import { MultiFilterBar, FilterOption } from "../common/MultiFilterBar";
+import { matchesMachineFilter, matchesMonthFilter } from "../../utils/filterUtils";
 import { salesData } from "../../data/sales";
 import { customersData } from "../../data/customers";
 import { productsData } from "../../data/products";
@@ -10,6 +12,8 @@ import { productsData } from "../../data/products";
 export const SalesModule: React.FC = () => {
   const [sales, setSales] = useState(salesData);
   const [searchQuery, setSearchQuery] = useState("");
+  const [machineFilter, setMachineFilter] = useState("All");
+  const [monthFilter, setMonthFilter] = useState("All");
   const [typeFilter, setTypeFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
@@ -17,6 +21,23 @@ export const SalesModule: React.FC = () => {
   const [selectedSale, setSelectedSale] = useState<(typeof salesData)[0] | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+
+  const statusOptions: FilterOption[] = [
+    { value: "All", label: "All Order Statuses" },
+    { value: "Completed", label: "Completed" },
+    { value: "In progress", label: "In progress" },
+    { value: "Dispatched", label: "Dispatched" },
+    { value: "Pending Approval", label: "Pending Approval" },
+    { value: "Approved", label: "Approved" },
+  ];
+
+  const typeOptions: FilterOption[] = [
+    { value: "All", label: "All Doc Types" },
+    { value: "Sales Order", label: "Sales Order" },
+    { value: "Tax Invoice", label: "Tax Invoice" },
+    { value: "Quotation", label: "Quotation" },
+    { value: "Proforma Invoice", label: "Proforma Invoice" },
+  ];
 
   const [newOrder, setNewOrder] = useState({
     customerId: customersData[0]?.id || 1,
@@ -32,20 +53,43 @@ export const SalesModule: React.FC = () => {
     setTimeout(() => setToastMessage(""), 2800);
   };
 
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setMachineFilter("All");
+    setMonthFilter("All");
+    setStatusFilter("All");
+    setTypeFilter("All");
+    setCurrentPage(1);
+  };
+
   const filteredSales = useMemo(() => {
     return sales.filter((item) => {
       const matchesSearch =
         item.reference.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.invoiceNo.toLowerCase().includes(searchQuery.toLowerCase());
+        item.invoiceNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.salesPerson.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesType = typeFilter === "All" || item.type === typeFilter;
       const matchesStatus = statusFilter === "All" || item.status === statusFilter;
-      return matchesSearch && matchesType && matchesStatus;
-    });
-  }, [sales, searchQuery, typeFilter, statusFilter]);
+      const matchesMachine = matchesMachineFilter(
+        machineFilter,
+        item.category,
+        item.productName,
+        item.notes,
+      );
+      const matchesMonth = matchesMonthFilter(item.date, monthFilter);
 
-  const totalPages = Math.ceil(filteredSales.length / pageSize);
+      return matchesSearch && matchesType && matchesStatus && matchesMachine && matchesMonth;
+    });
+  }, [sales, searchQuery, typeFilter, statusFilter, machineFilter, monthFilter]);
+
+  const totalFilteredAmount = useMemo(
+    () => filteredSales.reduce((acc, curr) => acc + curr.totalAmount, 0),
+    [filteredSales],
+  );
+
+  const totalPages = Math.ceil(filteredSales.length / pageSize) || 1;
   const displayedSales = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return filteredSales.slice(start, start + pageSize);
@@ -186,56 +230,42 @@ export const SalesModule: React.FC = () => {
         </div>
       </div>
 
-      {/* Search & Tabs */}
-      <div className="bg-white dark:bg-[#0B1F3A] border border-slate-200 dark:border-slate-800 p-3.5 rounded-sm flex flex-wrap items-center justify-between gap-3">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <span className="absolute inset-y-0 left-2.5 flex items-center text-slate-400">
-            <Icon name="search" size={14} />
-          </span>
-          <input
-            type="text"
-            placeholder="Search order ref, customer, or invoice..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-[#071526] border border-slate-300 dark:border-slate-700 rounded-sm text-slate-800 dark:text-white outline-none focus:border-[#3A6EA5]"
-          />
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={typeFilter}
-            onChange={(e) => {
-              setTypeFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="h-8 px-2.5 text-xs bg-slate-50 dark:bg-[#071526] border border-slate-300 dark:border-slate-700 rounded-sm text-slate-700 dark:text-slate-300 outline-none"
-          >
-            <option value="All">All Document Types</option>
-            <option value="Sales Order">Sales Order</option>
-            <option value="Tax Invoice">Tax Invoice</option>
-            <option value="Quotation">Quotation</option>
-            <option value="Proforma Invoice">Proforma Invoice</option>
-          </select>
-
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="h-8 px-2.5 text-xs bg-slate-50 dark:bg-[#071526] border border-slate-300 dark:border-slate-700 rounded-sm text-slate-700 dark:text-slate-300 outline-none"
-          >
-            <option value="All">All Statuses</option>
-            <option value="Completed">Completed</option>
-            <option value="In progress">In progress</option>
-            <option value="Approved">Approved</option>
-            <option value="Pending Approval">Pending Approval</option>
-          </select>
-        </div>
-      </div>
+      {/* Multi-Filter Bar (Machine-Wise, Month, Status, Type, Search) */}
+      <MultiFilterBar
+        searchQuery={searchQuery}
+        onSearchChange={(q) => {
+          setSearchQuery(q);
+          setCurrentPage(1);
+        }}
+        searchPlaceholder="Search order ref, customer, invoice or machine..."
+        machineFilter={machineFilter}
+        onMachineChange={(m) => {
+          setMachineFilter(m);
+          setCurrentPage(1);
+        }}
+        monthFilter={monthFilter}
+        onMonthChange={(mo) => {
+          setMonthFilter(mo);
+          setCurrentPage(1);
+        }}
+        statusFilter={statusFilter}
+        onStatusChange={(st) => {
+          setStatusFilter(st);
+          setCurrentPage(1);
+        }}
+        statusOptions={statusOptions}
+        secondaryFilter={typeFilter}
+        onSecondaryChange={(t) => {
+          setTypeFilter(t);
+          setCurrentPage(1);
+        }}
+        secondaryLabel="Doc Type"
+        secondaryOptions={typeOptions}
+        totalItems={sales.length}
+        filteredCount={filteredSales.length}
+        totalFilteredAmount={totalFilteredAmount}
+        onResetAll={handleResetFilters}
+      />
 
       {/* Table */}
       <div className="bg-white dark:bg-[#0B1F3A] border border-slate-200 dark:border-slate-800 rounded-sm overflow-hidden">

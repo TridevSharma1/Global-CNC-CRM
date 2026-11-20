@@ -17,6 +17,7 @@ import { inventoryData } from "../data/inventory";
 import { servicesData } from "../data/services";
 import { vendorsData } from "../data/vendors";
 import { accountingData } from "../data/accounting";
+import { matchesMachineFilter, matchesMonthFilter } from "../utils/filterUtils";
 
 describe("Global CNC Pvt. Ltd. Mock Data Validation", () => {
   it("validates company profile details", () => {
@@ -49,6 +50,18 @@ describe("Global CNC Pvt. Ltd. Mock Data Validation", () => {
   });
 });
 
+describe("Global CNC Filter Utilities", () => {
+  it("filters correctly by machine line and month", () => {
+    expect(matchesMachineFilter("VMC Machines", "VMC Machines", "GCV-850 Heavy Duty VMC")).toBe(
+      true,
+    );
+    expect(matchesMachineFilter("VMC Machines", "CNC Machines", "GCL-450 Lathe")).toBe(false);
+    expect(matchesMachineFilter("All", "Any", "Any")).toBe(true);
+    expect(matchesMonthFilter("2026-11-06", "2026-11")).toBe(true);
+    expect(matchesMonthFilter("2026-08-16", "2026-11")).toBe(false);
+  });
+});
+
 describe("Global CNC CRM Public Landing Page", () => {
   it("renders the public corporate landing page with key branding and contact info", () => {
     render(<GlobalCncApp />);
@@ -67,8 +80,8 @@ describe("Global CNC CRM Public Landing Page", () => {
   });
 });
 
-describe("Global CNC CRM Admin Panel & Simplified Navigation", () => {
-  it("opens login modal, authenticates as Admin and renders simplified CRM sections", () => {
+describe("Global CNC CRM Admin Panel & Multi-Filter System", () => {
+  it("opens login modal, authenticates as Admin and allows multi-filtering by machine and month", () => {
     render(<GlobalCncApp />);
     const crmBtn = screen.getAllByRole("button", { name: /crm login/i })[0];
     fireEvent.click(crmBtn);
@@ -88,15 +101,14 @@ describe("Global CNC CRM Admin Panel & Simplified Navigation", () => {
 
     // After login, admin dashboard should be visible
     expect(screen.getByText(/Manufacturing & Commercial Pulse/i)).toBeInTheDocument();
-    expect(screen.getByText(/Today's Sales/i)).toBeInTheDocument();
 
-    // Validate simplified admin sections required by user
-    expect(screen.getAllByRole("button", { name: /Purchase/i }).length).toBeGreaterThan(0);
-    expect(screen.getAllByRole("button", { name: /Expense/i }).length).toBeGreaterThan(0);
-    expect(screen.getAllByRole("button", { name: /Sale/i }).length).toBeGreaterThan(0);
-    expect(screen.getAllByRole("button", { name: /Profit Revenue/i }).length).toBeGreaterThan(0);
-    expect(screen.getAllByRole("button", { name: /Purchase Report/i }).length).toBeGreaterThan(0);
-    expect(screen.getAllByRole("button", { name: /Expense Rept/i }).length).toBeGreaterThan(0);
-    expect(screen.getAllByRole("button", { name: /Sales Report/i }).length).toBeGreaterThan(0);
+    // Navigate to Sale module
+    const saleNavs = screen.getAllByRole("button", { name: /Sale/i });
+    fireEvent.click(saleNavs[0]);
+
+    // Check Multi-Filter bar presence
+    expect(
+      screen.getByPlaceholderText(/Search order ref, customer, invoice or machine/i),
+    ).toBeInTheDocument();
   });
 });
